@@ -75,7 +75,6 @@
 <div id="login_screen" class="app-container" style="display: flex; align-items: center; justify-content: center; height: 100vh;">
     <div class="card" style="width: 100%; max-width: 400px; text-align: center;">
         <h2>🔐 Sistema de Pagos</h2>
-        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9em;">Usuario maestro: <b>admin</b> | Clave: <b>admin123</b></p>
         
         <div class="form-group" style="text-align: left;"><label>Usuario</label><input type="text" id="auth_user"></div>
         <div class="form-group" style="text-align: left;"><label>Contraseña</label><input type="password" id="auth_pass"></div>
@@ -234,7 +233,7 @@
     let db = { perfiles: {}, semana_actual: [], historico_pagos: {}, prestamos: {} };
 
     // --- USUARIOS ---
-    function inicializarAdmin() { database.ref('users/admin').once('value', snap => { if(!snap.exists()) database.ref('users/admin').set({ pass: 'admin123', role: 'admin', status: 'aprobado' }); }); }
+    function inicializarAdmin() { database.ref('users/JOSÉ').once('value', snap => { if(!snap.exists()) database.ref('users/JOSÉ').set({ pass: 'edimmet123', role: 'admin', status: 'aprobado' }); }); }
     inicializarAdmin(); 
 
     function ingresar() {
