@@ -3,168 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>App de Pagos de Personal</title>
+    <title>Sistema de Pagos en la Nube</title>
+    <!-- Librerías de Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        
-        :root { 
-            --primary: #4f46e5; --primary-hover: #4338ca;
-            --success: #10b981; --success-hover: #059669;
-            --danger: #ef4444; --bg: #f3f4f6; --surface: #ffffff;
-            --text-main: #1f2937; --text-muted: #6b7280;
-        }
-        
+        :root { --primary: #4f46e5; --success: #10b981; --danger: #ef4444; --bg: #f3f4f6; --surface: #ffffff; --text-main: #1f2937; --text-muted: #6b7280; }
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
         
-        /* Contenedores */
         .app-container { width: 100%; max-width: 1000px; margin: 0 auto; padding: 20px; }
         .card { background: var(--surface); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
         h1, h2, h3 { margin-top: 0; color: #111827; }
         
-        /* Formularios y Botones */
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
         label { font-weight: 600; margin-bottom: 6px; font-size: 0.9em; color: #374151; }
-        input, select { padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit; font-size: 1em; width: 100%; }
-        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        input, select { padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1em; width: 100%; }
         
-        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: 0.2s; }
-        .btn-primary { background: var(--primary); } .btn-primary:hover { background: var(--primary-hover); }
-        .btn-success { background: var(--success); } .btn-success:hover { background: var(--success-hover); }
-        .btn-danger { background: var(--danger); }
-        .btn-small { padding: 8px 12px; font-size: 0.85em; width: auto; }
+        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+        .btn-primary { background: var(--primary); } .btn-success { background: var(--success); } .btn-danger { background: var(--danger); } .btn-small { padding: 8px 12px; font-size: 0.85em; width: auto; }
+        .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-excel { background: #107c41; margin-bottom: 15px; } /* Color de Excel */
         
-        /* Navegación (Diseño de PC por defecto) */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
-        .tab-btn { background: transparent; color: var(--text-muted); border-radius: 8px; flex: none; width: auto; font-size: 1.1em; padding: 10px 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; overflow-x: auto; }
+        .tab-btn { background: transparent; color: var(--text-muted); border-radius: 8px; font-size: 1.1em; padding: 10px 20px; cursor:pointer; border:none; white-space: nowrap; }
         .tab-btn.active { background: var(--primary); color: white; }
-        .tab-content { display: none; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Tablas (Diseño de PC) */
+        .tab-content { display: none; } .tab-content.active { display: block; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; }
-        th { background-color: #f9fafb; font-weight: 600; color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; }
+        th { background-color: #f9fafb; font-weight: 600; color: var(--text-muted); font-size: 0.85em; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75em; font-weight: 700; color: white; }
+        .bg-normal { background: #3b82f6; } .bg-medio { background: #f59e0b; } .bg-amanecida { background: #8b5cf6; } .bg-falta { background: var(--danger); } .bg-pendiente { background: #f59e0b; }
         
         /* Modales */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(17, 24, 39, 0.7); justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(2px); }
-        .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 500px; width: 95%; max-height: 90vh; overflow-y: auto; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; }
         
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75em; font-weight: 700; color: white; }
-        .bg-normal { background: #3b82f6; } .bg-medio { background: #f59e0b; } .bg-amanecida { background: #8b5cf6; } .bg-falta { background: var(--danger); }
-        
-        #app_screen { display: none; }
+        #app_screen, #admin_tab { display: none; }
 
-        /* =======================================================
-           MAGIA RESPONSIVA (DISEÑO EXCLUSIVO PARA CELULARES)
-           ======================================================= */
+        /* Responsive Celular */
         @media (max-width: 768px) {
-            .app-container { padding: 15px; padding-bottom: 90px; } /* Espacio para el menú inferior */
-            
-            /* Menú inferior tipo App Nativa */
-            .tabs { position: fixed; bottom: 0; left: 0; width: 100%; background: white; margin: 0; padding: 10px 5px 20px 5px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); justify-content: space-around; z-index: 1000; border-radius: 20px 20px 0 0; border: none; }
-            .tab-btn { flex-direction: column; font-size: 0.75em; padding: 8px; border-radius: 12px; gap: 4px; width: 30%; }
-            .tab-btn i { font-size: 1.5em; display: block; margin-bottom: 2px; }
-            
-            /* Transformar Tablas en Tarjetas (Cards) */
+            .app-container { padding: 15px; padding-bottom: 90px; }
+            .tabs { position: fixed; bottom: 0; left: 0; width: 100%; background: white; margin: 0; padding: 10px 5px 20px 5px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); justify-content: space-around; z-index: 1000; border-radius: 20px 20px 0 0; }
+            .tab-btn { flex-direction: column; font-size: 0.75em; padding: 8px; border-radius: 12px; width: 24%; }
+            .tab-btn i { font-size: 1.5em; display: block; margin-bottom: 2px; font-style: normal; }
             table, thead, tbody, th, td, tr { display: block; }
-            thead tr { position: absolute; top: -9999px; left: -9999px; } /* Ocultar cabecera */
+            thead tr { display: none; }
             tr { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 15px; padding: 10px; }
-            td { border: none; position: relative; padding: 10px 10px 10px 45%; text-align: right; border-bottom: 1px solid #f3f4f6; }
-            td:last-child { border-bottom: none; text-align: center; }
+            td { position: relative; padding: 10px 10px 10px 45%; text-align: right; border-bottom: 1px solid #f3f4f6; }
             td:before { position: absolute; top: 12px; left: 10px; width: 40%; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 0.85em; content: attr(data-label); }
-            
-            /* Ajustes visuales */
-            h1 { font-size: 1.5em; }
-            .btn-small { width: 100%; margin-top: 5px; }
-            .modal-content { padding: 20px; }
         }
     </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- PANTALLA DE LOGIN -->
 <div id="login_screen" class="app-container" style="display: flex; align-items: center; justify-content: center; height: 100vh;">
     <div class="card" style="width: 100%; max-width: 400px; text-align: center;">
-        <h2 id="login_title">🔐 Iniciar Sesión</h2>
-        <p id="login_subtitle" style="color: var(--text-muted); margin-bottom: 25px;">Ingresa tus credenciales para acceder</p>
+        <h2>☁️ Sistema en la Nube</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Cuenta de administrador inicial:<br>Usuario: <b>admin</b> | Clave: <b>admin123</b></p>
         
-        <div class="form-group" style="text-align: left;">
-            <label>Usuario</label>
-            <input type="text" id="auth_user" placeholder="Ej: admin">
-        </div>
-        <div class="form-group" style="text-align: left;">
-            <label>Contraseña</label>
-            <input type="password" id="auth_pass" placeholder="••••••••">
-        </div>
-        <button class="btn-primary" onclick="procesarLogin()" id="btn_login">Ingresar al Sistema</button>
+        <div class="form-group" style="text-align: left;"><label>Usuario</label><input type="text" id="auth_user"></div>
+        <div class="form-group" style="text-align: left;"><label>Contraseña</label><input type="password" id="auth_pass"></div>
+        
+        <button class="btn-primary" onclick="ingresar()">Iniciar Sesión</button>
+        <button class="btn-outline" style="margin-top: 10px;" onclick="solicitarCuenta()">Solicitar Cuenta Nueva</button>
     </div>
 </div>
 
 <!-- APP PRINCIPAL -->
 <div id="app_screen" class="app-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin:0;">⚙️ Sistema de Pagos</h1>
+        <h2 style="margin:0;">Hola, <span id="nombre_usuario"></span></h2>
         <button class="btn-danger btn-small" onclick="cerrarSesion()">Salir</button>
     </div>
     
-    <!-- Menú de Navegación -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('registro')"><i>📝</i><br>Asistencia</button>
         <button class="tab-btn" onclick="switchTab('perfiles')"><i>👥</i><br>Personal</button>
-        <button class="tab-btn" onclick="switchTab('historial')"><i>💰</i><br>Deudas</button>
+        <button class="tab-btn" onclick="switchTab('historial')"><i>📊</i><br>Historial</button>
+        <!-- Pestaña exclusiva de admin -->
+        <button class="tab-btn" id="admin_tab" onclick="switchTab('admin_panel')"><i>⚙️</i><br>Accesos</button>
     </div>
 
     <!-- PESTAÑA: REGISTRO -->
     <div id="registro" class="tab-content active">
         <div class="card">
-            <h2>Registrar Día</h2>
+            <h3>Registrar Día</h3>
             <div class="grid">
                 <div class="form-group"><label>Fecha:</label><input type="date" id="fecha_registro"></div>
                 <div class="form-group"><label>Trabajador:</label><select id="select_trabajador"></select></div>
-                <div class="form-group">
-                    <label>Jornada:</label>
+                <div class="form-group"><label>Jornada:</label>
                     <select id="tipo_jornada">
-                        <option value="completo">Día Completo (L-S)</option>
-                        <option value="medio">Medio Día</option>
-                        <option value="amanecida">Amanecida</option>
-                        <option value="domingo">Domingo (Día Completo)</option>
-                        <option value="falta">Faltó</option>
+                        <option value="completo">Día Completo</option><option value="medio">Medio Día</option>
+                        <option value="amanecida">Amanecida</option><option value="domingo">Domingo</option><option value="falta">Faltó</option>
                     </select>
                 </div>
             </div>
-            <button class="btn-success" style="margin-top: 10px;" onclick="registrarDia()">Guardar Asistencia</button>
+            <button class="btn-success" onclick="registrarDia()">Guardar Asistencia</button>
         </div>
-
         <div class="card">
-            <h3 style="margin: 0 0 15px 0;">Semana Actual (Pendiente)</h3>
+            <h3>Semana Actual</h3>
             <table id="tabla_semana_actual">
                 <thead><tr><th>Fecha</th><th>Trabajador</th><th>Jornada</th><th>Monto</th><th>Acción</th></tr></thead>
                 <tbody></tbody>
             </table>
-            <button class="btn-primary" style="margin-top: 20px;" onclick="iniciarCierreSemana()">🔒 Cerrar Semana</button>
+            <button class="btn-primary" style="margin-top: 20px;" onclick="cerrarSemanaRapido()">🔒 Cerrar Semana y Calcular</button>
         </div>
     </div>
 
     <!-- PESTAÑA: PERSONAL -->
     <div id="perfiles" class="tab-content">
         <div class="card">
-            <h2>Añadir Trabajador</h2>
+            <h3>Añadir Trabajador</h3>
             <div class="grid">
                 <div class="form-group"><label>Nombre:</label><input type="text" id="nuevo_nombre"></div>
-                <div class="form-group"><label>Día Normal (S/):</label><input type="number" id="tarifa_dia" value="0"></div>
-                <div class="form-group"><label>Medio Día (S/):</label><input type="number" id="tarifa_medio" value="0"></div>
+                <div class="form-group"><label>Día (S/):</label><input type="number" id="tarifa_dia" value="0"></div>
+                <div class="form-group"><label>Medio (S/):</label><input type="number" id="tarifa_medio" value="0"></div>
                 <div class="form-group"><label>Amanecida (S/):</label><input type="number" id="tarifa_amanecida" value="0"></div>
                 <div class="form-group"><label>Domingo (S/):</label><input type="number" id="tarifa_domingo" value="0"></div>
             </div>
-            <button class="btn-primary" style="margin-top: 10px;" onclick="guardarPerfil()">Guardar Perfil</button>
+            <button class="btn-primary" onclick="guardarPerfil()">Guardar Perfil</button>
         </div>
-
         <div class="card">
-            <h3 style="margin: 0 0 15px 0;">Equipo Registrado</h3>
+            <h3>Equipo</h3>
             <table id="tabla_perfiles">
                 <thead><tr><th>Nombre</th><th>Normal</th><th>Medio</th><th>Amanecida</th><th>Domingo</th><th>Acción</th></tr></thead>
                 <tbody></tbody>
@@ -175,246 +141,296 @@
     <!-- PESTAÑA: HISTORIAL -->
     <div id="historial" class="tab-content">
         <div class="card">
-            <h2 style="margin: 0 0 15px 0;">Estado de Cuentas</h2>
+            <button class="btn-excel" onclick="exportarExcel()">📥 Descargar Historial en Excel (.csv)</button>
+            <h3 style="margin-top: 10px;">Estado de Cuentas</h3>
             <div id="lista_deudas"></div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA: PANEL ADMIN -->
+    <div id="admin_panel" class="tab-content">
+        <div class="card">
+            <h3>Gestión de Usuarios</h3>
+            <p style="font-size: 0.9em; color: gray;">Aquí apruebas a las personas que solicitaron una cuenta para usar la app.</p>
+            <table id="tabla_usuarios">
+                <thead><tr><th>Usuario</th><th>Estado</th><th>Rol</th><th>Acción</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- MODAL DE CIERRE DE SEMANA -->
-<div id="modal_cierre" class="modal">
+<!-- MODAL: HISTORIAL DETALLADO -->
+<div id="modal_historial" class="modal">
     <div class="modal-content">
-        <h2 style="margin-bottom: 10px; color: var(--primary);">Cierre de Semana</h2>
-        
-        <div id="pregunta_domingo" class="form-group" style="background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe; margin-bottom: 20px;">
-            <label style="color: #1e3a8a;">¿Se trabajará este domingo?</label>
-            <select id="trabajara_domingo" style="margin-top: 10px;">
-                <option value="no">No, calcular hasta hoy.</option>
-                <option value="si">Sí, incluir domingos automáticamente.</option>
-            </select>
+        <h3 id="historial_titulo" style="margin-top: 0; color: var(--primary);">Historial</h3>
+        <div id="historial_lista" style="flex: 1; overflow-y: auto; margin-bottom: 20px;">
+            <!-- Se llena con JS -->
         </div>
-
-        <h3>Descuentos / Observaciones</h3>
-        <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 15px;">Aplica descuentos por préstamos o faltas. Si no hay, déjalo en 0.</p>
-        
-        <div id="contenedor_descuentos" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px;"></div>
-
-        <div style="display: flex; gap: 10px; flex-direction: column;">
-            <button class="btn-success" onclick="ejecutarCierre()">Confirmar Cierre</button>
-            <button style="background: #e5e7eb; color: #374151;" onclick="document.getElementById('modal_cierre').style.display='none'">Cancelar</button>
-        </div>
+        <button class="btn-outline" onclick="document.getElementById('modal_historial').style.display='none'">Cerrar</button>
     </div>
 </div>
 
 <script>
-    // --- AUTENTICACIÓN ---
-    let credenciales = JSON.parse(localStorage.getItem('admin_cred'));
-    
-    function initAuth() {
-        if (!credenciales) {
-            document.getElementById('login_title').innerText = "📝 Crear Cuenta";
-            document.getElementById('btn_login').innerText = "Crear y Entrar";
-        }
-    }
+    // =========================================================================
+    // ⚠️ REEMPLAZA ESTO CON EL CÓDIGO QUE TE DIO FIREBASE ⚠️
+    // =========================================================================
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "tu-proyecto.firebaseapp.com",
+      databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
+      projectId: "tu-proyecto",
+      storageBucket: "tu-proyecto.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef"
+    };
+    // =========================================================================
 
-    function procesarLogin() {
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let currentUser = null;
+    let isAdmin = false;
+    let db = { perfiles: {}, semana_actual: [], historico_pagos: {} };
+
+    // --- SISTEMA DE USUARIOS ---
+    function inicializarAdmin() {
+        database.ref('users/admin').once('value', snap => {
+            if(!snap.exists()) database.ref('users/admin').set({ pass: 'admin123', role: 'admin', status: 'aprobado' });
+        });
+    }
+    inicializarAdmin(); 
+
+    function ingresar() {
         const u = document.getElementById('auth_user').value.trim();
         const p = document.getElementById('auth_pass').value.trim();
-        if (!u || !p) return alert("Completa ambos campos.");
+        if(!u || !p) return alert("Completa los datos");
 
-        if (!credenciales) {
-            credenciales = { user: u, pass: p };
-            localStorage.setItem('admin_cred', JSON.stringify(credenciales));
-            mostrarApp();
-        } else {
-            if (u === credenciales.user && p === credenciales.pass) mostrarApp();
-            else alert("Usuario o contraseña incorrectos.");
-        }
+        database.ref('users/' + u).once('value').then(snap => {
+            if(snap.exists()) {
+                const user = snap.val();
+                if(user.pass === p) {
+                    if(user.status === 'pendiente') {
+                        alert("⏳ Tu cuenta está en revisión. Pídele al administrador que te apruebe.");
+                    } else {
+                        currentUser = u; isAdmin = (user.role === 'admin');
+                        document.getElementById('login_screen').style.display = 'none';
+                        document.getElementById('app_screen').style.display = 'block';
+                        document.getElementById('nombre_usuario').innerText = u;
+                        document.getElementById('fecha_registro').valueAsDate = new Date();
+                        if(isAdmin) document.getElementById('admin_tab').style.display = 'flex';
+                        arrancarSincronizacion();
+                    }
+                } else { alert("❌ Contraseña incorrecta"); }
+            } else { alert("❌ Usuario no encontrado."); }
+        });
     }
 
-    function mostrarApp() {
-        document.getElementById('login_screen').style.display = 'none';
-        document.getElementById('app_screen').style.display = 'block';
-        document.getElementById('fecha_registro').valueAsDate = new Date();
-        actualizarVistas();
+    function solicitarCuenta() {
+        const u = document.getElementById('auth_user').value.trim();
+        const p = document.getElementById('auth_pass').value.trim();
+        if(!u || !p) return alert("Escribe un usuario y contraseña");
+        database.ref('users/' + u).once('value').then(snap => {
+            if(snap.exists()) alert("Este usuario ya existe.");
+            else {
+                database.ref('users/' + u).set({ pass: p, role: 'user', status: 'pendiente' });
+                alert("✅ Solicitud enviada.");
+            }
+        });
     }
 
-    function cerrarSesion() {
-        document.getElementById('app_screen').style.display = 'none';
-        document.getElementById('login_screen').style.display = 'flex';
-        document.getElementById('auth_user').value = '';
-        document.getElementById('auth_pass').value = '';
-    }
+    function cerrarSesion() { location.reload(); }
 
-    initAuth();
-
-    // --- BASE DE DATOS ---
-    let db = JSON.parse(localStorage.getItem('db_pagos_v3')) || { perfiles: {}, semana_actual: [], historico_pagos: {} };
-    function guardarDB() { localStorage.setItem('db_pagos_v3', JSON.stringify(db)); }
-
-    // --- NAVEGACIÓN ---
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         event.currentTarget.classList.add('active');
-        actualizarVistas();
     }
 
-    // --- LÓGICA CORE ---
+    // --- SINCRONIZACIÓN CON LA NUBE ---
+    function arrancarSincronizacion() {
+        database.ref('db_pagos').on('value', snap => {
+            if(snap.exists()) db = snap.val();
+            if(!db.perfiles) db.perfiles = {}; if(!db.semana_actual) db.semana_actual = []; if(!db.historico_pagos) db.historico_pagos = {};
+            actualizarVistas();
+        });
+
+        if(isAdmin) {
+            database.ref('users').on('value', snap => {
+                const usuarios = snap.val(); const tb = document.querySelector('#tabla_usuarios tbody'); tb.innerHTML = '';
+                for(let nombre in usuarios) {
+                    if(nombre === 'admin') continue;
+                    const u = usuarios[nombre];
+                    const btn = u.status === 'pendiente' 
+                        ? `<button class="btn-success btn-small" onclick="aprobarUsuario('${nombre}')">Aprobar</button>`
+                        : `<button class="btn-danger btn-small" onclick="borrarUsuario('${nombre}')">Eliminar</button>`;
+                    const badge = `<span class="badge ${u.status === 'aprobado' ? 'bg-normal' : 'bg-pendiente'}">${u.status}</span>`;
+                    tb.innerHTML += `<tr><td data-label="Usuario"><strong>${nombre}</strong></td><td data-label="Estado">${badge}</td><td data-label="Rol">${u.role}</td><td data-label="Acción">${btn}</td></tr>`;
+                }
+            });
+        }
+    }
+
+    function guardarEnNube() { database.ref('db_pagos').set(db); }
+
+    // --- LÓGICA DE LA APP ---
     function guardarPerfil() {
         const nombre = document.getElementById('nuevo_nombre').value.trim();
-        if (!nombre) return alert("Ingresa un nombre");
-
+        if(!nombre) return alert("Ingresa nombre");
         db.perfiles[nombre] = {
-            dia: parseFloat(document.getElementById('tarifa_dia').value) || 0,
-            medio: parseFloat(document.getElementById('tarifa_medio').value) || 0,
-            amanecida: parseFloat(document.getElementById('tarifa_amanecida').value) || 0,
-            domingo: parseFloat(document.getElementById('tarifa_domingo').value) || 0
+            dia: parseFloat(document.getElementById('tarifa_dia').value)||0, medio: parseFloat(document.getElementById('tarifa_medio').value)||0,
+            amanecida: parseFloat(document.getElementById('tarifa_amanecida').value)||0, domingo: parseFloat(document.getElementById('tarifa_domingo').value)||0
         };
         if(!db.historico_pagos[nombre]) db.historico_pagos[nombre] = { deuda: 0, recibos: [] };
-        guardarDB(); document.getElementById('nuevo_nombre').value = ''; actualizarVistas();
+        guardarEnNube(); document.getElementById('nuevo_nombre').value = '';
     }
 
-    function eliminarPerfil(nombre) {
-        if(confirm(`¿Borrar a ${nombre}?`)) { delete db.perfiles[nombre]; guardarDB(); actualizarVistas(); }
-    }
+    function eliminarPerfil(n) { if(confirm("¿Borrar a "+n+"?")) { delete db.perfiles[n]; guardarEnNube(); } }
 
     function registrarDia() {
         const fecha = document.getElementById('fecha_registro').value;
         const nombre = document.getElementById('select_trabajador').value;
         const jornada = document.getElementById('tipo_jornada').value;
+        if(!nombre || !fecha) return alert("Completa datos");
+        const p = db.perfiles[nombre]; let monto = 0;
+        if(jornada==='completo') monto = p.dia; else if(jornada==='medio') monto = p.medio; else if(jornada==='amanecida') monto = p.amanecida; else if(jornada==='domingo') monto = p.domingo;
+        db.semana_actual.push({ id: Date.now(), fecha, nombre, jornada, monto, registradoPor: currentUser });
+        guardarEnNube(); alert("Guardado en la nube");
+    }
 
-        if(!nombre || !fecha) return alert("Completa fecha y trabajador.");
+    function borrarRegistro(id) { db.semana_actual = db.semana_actual.filter(r => r.id !== id); guardarEnNube(); }
+
+    function cerrarSemanaRapido() {
+        if(!db.semana_actual || db.semana_actual.length === 0) return alert("No hay registros");
+        if(!confirm("¿Cerrar semana y calcular pagos?")) return;
         
-        const p = db.perfiles[nombre];
-        let monto = 0;
-        if(jornada === 'completo') monto = p.dia;
-        if(jornada === 'medio') monto = p.medio;
-        if(jornada === 'amanecida') monto = p.amanecida;
-        if(jornada === 'domingo') monto = p.domingo;
+        let trabajadores = [...new Set(db.semana_actual.map(r => r.nombre))];
+        
+        trabajadores.forEach(n => {
+            let registrosTrabajador = db.semana_actual.filter(r => r.nombre === n);
+            let totalMonto = registrosTrabajador.reduce((sum, r) => sum + r.monto, 0);
+            
+            // Recopilar detalle exacto de qué días trabajó
+            let detalleDias = registrosTrabajador.map(r => `${r.fecha} (${r.jornada})`).join(" | ");
 
-        db.semana_actual.push({ id: Date.now(), fecha, nombre, jornada, monto });
-        guardarDB(); actualizarVistas(); alert("Día registrado.");
-    }
+            if(!db.historico_pagos[n]) db.historico_pagos[n] = { deuda: 0, recibos: [] };
+            if(!db.historico_pagos[n].recibos) db.historico_pagos[n].recibos = [];
 
-    function borrarRegistro(id) {
-        db.semana_actual = db.semana_actual.filter(r => r.id !== id);
-        guardarDB(); actualizarVistas();
-    }
-
-    let trabajadoresSemana = [];
-    function iniciarCierreSemana() {
-        if(db.semana_actual.length === 0) return alert("No hay registros esta semana.");
-
-        const nombresUnicos = new Set(db.semana_actual.map(r => r.nombre));
-        trabajadoresSemana = Array.from(nombresUnicos);
-
-        const cont = document.getElementById('contenedor_descuentos');
-        cont.innerHTML = '';
-        trabajadoresSemana.forEach(nombre => {
-            cont.innerHTML += `
-                <div style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 10px;">
-                    <strong style="display: block; margin-bottom: 8px;">👤 ${nombre}</strong>
-                    <div class="form-group"><label>Descuento (S/):</label><input type="number" id="desc_monto_${nombre}" value="0"></div>
-                    <div class="form-group"><label>Motivo:</label><input type="text" id="desc_motivo_${nombre}" placeholder="Ej: Préstamo"></div>
-                </div>`;
+            db.historico_pagos[n].deuda += totalMonto;
+            db.historico_pagos[n].recibos.push({
+                fecha: new Date().toLocaleDateString(),
+                monto: totalMonto,
+                detalle: `DÍAS TRABAJADOS: ${detalleDias}`
+            });
         });
 
-        const esDomingo = new Date().getDay() === 0;
-        document.getElementById('pregunta_domingo').style.display = esDomingo ? 'none' : 'block';
-        document.getElementById('modal_cierre').style.display = 'flex';
+        db.semana_actual = []; guardarEnNube(); alert("Semana cerrada"); switchTab('historial');
     }
 
-    function ejecutarCierre() {
-        const addDomingo = document.getElementById('pregunta_domingo').style.display !== 'none' && document.getElementById('trabajara_domingo').value === 'si';
-        let generados = {};
-        db.semana_actual.forEach(r => { generados[r.nombre] = (generados[r.nombre] || 0) + r.monto; });
-
-        trabajadoresSemana.forEach(nombre => {
-            let total = generados[nombre] || 0;
-            if (addDomingo && db.perfiles[nombre]) total += db.perfiles[nombre].domingo;
-
-            const descMonto = parseFloat(document.getElementById(`desc_monto_${nombre}`).value) || 0;
-            const descMotivo = document.getElementById(`desc_motivo_${nombre}`).value || "Sin especificar";
-            
-            total -= descMonto; 
-            db.historico_pagos[nombre].deuda += total;
-            
-            let det = `Cierre semana. Generó S/${(total + descMonto)}.`;
-            if (descMonto > 0) det += ` DSCTO: -S/${descMonto} (${descMotivo}).`;
-
-            db.historico_pagos[nombre].recibos.push({ fecha: new Date().toLocaleDateString(), monto: total, detalle: det });
-        });
-
-        db.semana_actual = []; guardarDB();
-        document.getElementById('modal_cierre').style.display = 'none';
-        alert("¡Semana cerrada con éxito!");
-        actualizarVistas(); switchTab('historial');
-    }
-
-    function liquidarPago(nombre) {
-        const monto = db.historico_pagos[nombre].deuda;
-        if(confirm(`¿Registrar pago de S/ ${monto.toFixed(2)} a ${nombre}?`)) {
-            db.historico_pagos[nombre].deuda = 0;
-            db.historico_pagos[nombre].recibos.push({ fecha: new Date().toLocaleDateString(), monto: 0, detalle: `✅ PAGO REALIZADO` });
-            guardarDB(); actualizarVistas();
+    function liquidarPago(n) {
+        if(confirm(`¿Pagaste a ${n}? Su deuda quedará en 0.`)) {
+            db.historico_pagos[n].deuda = 0;
+            db.historico_pagos[n].recibos.push({ fecha: new Date().toLocaleDateString(), monto: 0, detalle: "✅ SE REALIZÓ EL PAGO" });
+            guardarEnNube();
         }
     }
 
-    // --- RENDERIZADO VISUAL ---
+    // --- NUEVO: VER HISTORIAL DETALLADO ---
+    function verHistorialDetallado(nombre) {
+        const h = db.historico_pagos[nombre];
+        const modal = document.getElementById('modal_historial');
+        const lista = document.getElementById('historial_lista');
+        
+        document.getElementById('historial_titulo').innerText = "Historial de " + nombre;
+        lista.innerHTML = '';
+
+        if (h && h.recibos && h.recibos.length > 0) {
+            // Clonamos y volteamos para ver el más reciente primero
+            [...h.recibos].reverse().forEach(r => {
+                const esPago = r.detalle.includes("PAGO");
+                lista.innerHTML += `
+                    <div style="padding: 12px; border-bottom: 1px solid #e5e7eb; background: ${esPago ? '#ecfdf5' : 'white'}; border-radius: 8px; margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <strong style="color: #374151;">📅 ${r.fecha}</strong>
+                            <b style="color:${esPago ? 'var(--success)' : 'var(--danger)'}; font-size: 1.1em;">S/ ${r.monto.toFixed(2)}</b>
+                        </div>
+                        <div style="font-size:0.85em; color: var(--text-muted); line-height: 1.4;">${r.detalle}</div>
+                    </div>
+                `;
+            });
+        } else {
+            lista.innerHTML = '<p style="color: gray; text-align: center;">No hay historial todavía.</p>';
+        }
+        
+        modal.style.display = 'flex';
+    }
+
+    // --- NUEVO: EXPORTAR A EXCEL (.CSV) ---
+    function exportarExcel() {
+        // Cabeceras del Excel
+        let csv = "Trabajador;Fecha;Tipo de Movimiento;Monto (S/);Detalle de Dias Trabajados\n";
+
+        for(let nombre in db.historico_pagos) {
+            let h = db.historico_pagos[nombre];
+            if(h.recibos) {
+                h.recibos.forEach(r => {
+                    let tipo = r.detalle.includes("PAGO") ? "Pago Entregado" : "Cierre de Semana";
+                    // Limpiar textos para que no rompan el Excel
+                    let detalleLimpio = r.detalle.replace(/;/g, ",").replace(/\n/g, " ");
+                    csv += `${nombre};${r.fecha};${tipo};${r.monto};${detalleLimpio}\n`;
+                });
+            }
+        }
+
+        // Crear el archivo descargable
+        let blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }); // \ufeff pone tildes y ñ correctamente
+        let link = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Historial_Pagos_Personal.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Funciones Admin
+    function aprobarUsuario(u) { database.ref('users/'+u).update({ status: 'aprobado' }); }
+    function borrarUsuario(u) { if(confirm("¿Eliminar usuario?")) database.ref('users/'+u).remove(); }
+
+    // Render
     function actualizarVistas() {
-        const sel = document.getElementById('select_trabajador');
-        sel.innerHTML = '<option value="">Elegir...</option>';
-        for(let n in db.perfiles) sel.innerHTML += `<option value="${n}">${n}</option>`;
-
-        const tbP = document.querySelector('#tabla_perfiles tbody');
-        tbP.innerHTML = '';
+        const sel = document.getElementById('select_trabajador'); sel.innerHTML = '<option value="">Elegir...</option>';
+        const tbP = document.querySelector('#tabla_perfiles tbody'); tbP.innerHTML = '';
         for(let n in db.perfiles) {
-            const p = db.perfiles[n];
-            // NOTA: Se añaden atributos data-label para que el CSS de celular sepa qué texto mostrar
-            tbP.innerHTML += `<tr>
-                <td data-label="Nombre"><strong>${n}</strong></td>
-                <td data-label="Normal">S/${p.dia}</td>
-                <td data-label="Medio">S/${p.medio}</td>
-                <td data-label="Amanecida">S/${p.amanecida}</td>
-                <td data-label="Domingo">S/${p.domingo}</td>
-                <td data-label="Acción"><button class="btn-danger btn-small" onclick="eliminarPerfil('${n}')">Borrar</button></td>
-            </tr>`;
+            sel.innerHTML += `<option value="${n}">${n}</option>`;
+            tbP.innerHTML += `<tr><td data-label="Nombre"><strong>${n}</strong></td><td data-label="Día">S/${db.perfiles[n].dia}</td><td data-label="Medio">S/${db.perfiles[n].medio}</td><td data-label="Amanecida">S/${db.perfiles[n].amanecida}</td><td data-label="Domingo">S/${db.perfiles[n].domingo}</td><td data-label="Acción"><button class="btn-danger btn-small" onclick="eliminarPerfil('${n}')">Borrar</button></td></tr>`;
         }
-
-        const tbS = document.querySelector('#tabla_semana_actual tbody');
-        tbS.innerHTML = '';
-        db.semana_actual.forEach(r => {
-            const b = `<span class="badge bg-${r.jornada === 'completo'||r.jornada==='domingo' ? 'normal' : r.jornada==='falta'?'falta':r.jornada==='medio'?'medio':'amanecida'}">${r.jornada.toUpperCase()}</span>`;
-            tbS.innerHTML += `<tr>
-                <td data-label="Fecha">${r.fecha}</td>
-                <td data-label="Trabajador">${r.nombre}</td>
-                <td data-label="Jornada">${b}</td>
-                <td data-label="Monto"><strong>S/${r.monto}</strong></td>
-                <td data-label="Acción"><button class="btn-danger btn-small" onclick="borrarRegistro(${r.id})">Quitar</button></td>
-            </tr>`;
+        const tbS = document.querySelector('#tabla_semana_actual tbody'); tbS.innerHTML = '';
+        if(db.semana_actual) db.semana_actual.forEach(r => {
+            const b = `<span class="badge ${r.jornada === 'falta' ? 'bg-falta' : 'bg-normal'}">${r.jornada.toUpperCase()}</span>`;
+            tbS.innerHTML += `<tr><td data-label="Fecha">${r.fecha}</td><td data-label="Trabajador">${r.nombre}</td><td data-label="Jornada">${b}</td><td data-label="Monto"><strong>S/${r.monto}</strong></td><td data-label="Acción"><button class="btn-danger btn-small" onclick="borrarRegistro(${r.id})">Quitar</button></td></tr>`;
         });
-
-        const divD = document.getElementById('lista_deudas');
-        divD.innerHTML = '';
+        const divD = document.getElementById('lista_deudas'); divD.innerHTML = '';
         for(let n in db.historico_pagos) {
             const h = db.historico_pagos[n];
-            const ultReg = h.recibos.length > 0 ? h.recibos[h.recibos.length-1].detalle : 'Sin registros';
             divD.innerHTML += `
-                <div style="background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 10px;">
+                <div style="background: white; padding: 15px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h3 style="margin:0;">${n}</h3>
-                        <div style="font-size: 1.2em; font-weight: 700; color: ${h.deuda > 0 ? 'var(--danger)' : 'var(--success)'};">
-                            ${h.deuda > 0 ? 'S/ ' + h.deuda.toFixed(2) : 'Al día'}
+                        <div style="text-align: right;">
+                            <strong style="color: ${h.deuda > 0 ? 'var(--danger)' : 'var(--success)'}; font-size: 1.2em; display: block;">S/ ${h.deuda.toFixed(2)}</strong>
                         </div>
                     </div>
-                    <p style="margin:0 0 10px 0; font-size:0.85em; color:var(--text-muted);">Último mov: ${ultReg}</p>
-                    ${h.deuda > 0 ? `<button class="btn-success btn-small" style="width: 100%;" onclick="liquidarPago('${n}')">Marcar como Pagado</button>` : ''}
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-outline btn-small" style="flex: 1;" onclick="verHistorialDetallado('${n}')">👀 Ver Detalles</button>
+                        ${h.deuda > 0 ? `<button class="btn-success btn-small" style="flex: 1;" onclick="liquidarPago('${n}')">Pagar Deuda</button>` : ''}
+                    </div>
                 </div>`;
         }
     }
 </script>
-
 </body>
 </html>
