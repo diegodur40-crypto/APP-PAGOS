@@ -247,7 +247,7 @@
                     else {
                         currentUser = u; isAdmin = (user.role === 'admin');
                         document.getElementById('login_screen').style.display = 'none'; document.getElementById('app_screen').style.display = 'block';
-                        document.getElementById('nombre_usuario').innerText = u; document.getElementById('fecha_registro').valueAsDate = new Date();
+                        document.getElementById('nombre_usuario').innerText = u; document.getElementById('fecha_registro').value = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
                         if(isAdmin) document.getElementById('admin_tab').style.display = 'block';
                         arrancarSincronizacion();
                     }
