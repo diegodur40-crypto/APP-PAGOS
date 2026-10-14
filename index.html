@@ -3,100 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistema de Pagos en la Nube</title>
+    <title>Sistema de Pagos y Préstamos</title>
     <!-- Librerías de Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        :root { --primary: #4f46e5; --success: #10b981; --danger: #ef4444; --bg: #f3f4f6; --surface: #ffffff; --text-main: #1f2937; --text-muted: #6b7280; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        :root { --primary: #3b82f6; --primary-dark: #2563eb; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --bg: #f3f4f6; --surface: #ffffff; --text-main: #1f2937; --text-muted: #6b7280; }
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
         
-        .app-container { width: 100%; max-width: 1000px; margin: 0 auto; padding: 20px; }
-        .card { background: var(--surface); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .app-container { width: 100%; max-width: 1000px; margin: 0 auto; padding: 15px; }
+        .card { background: var(--surface); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e5e7eb; }
         h1, h2, h3 { margin-top: 0; color: #111827; }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         .form-group { display: flex; flex-direction: column; margin-bottom: 12px; }
-        label { font-weight: 600; margin-bottom: 6px; font-size: 0.9em; color: #374151; }
-        input, select { padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1em; width: 100%; }
+        label { font-weight: 600; margin-bottom: 6px; font-size: 0.9em; color: #4b5563; }
+        input, select { padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 1em; width: 100%; outline: none; transition: border 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); }
         
-        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1em; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
-        .btn-primary { background: var(--primary); } .btn-success { background: var(--success); } .btn-danger { background: var(--danger); } .btn-small { padding: 8px 12px; font-size: 0.85em; width: auto; }
-        .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); }
-        .btn-excel { background: #107c41; margin-bottom: 15px; } /* Color de Excel */
+        button { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1em; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
+        .btn-primary { background: var(--primary); } .btn-success { background: var(--success); } .btn-danger { background: var(--danger); } .btn-warning { background: var(--warning); }
+        .btn-small { padding: 8px 12px; font-size: 0.85em; width: auto; }
+        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid #d1d5db; }
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; overflow-x: auto; }
-        .tab-btn { background: transparent; color: var(--text-muted); border-radius: 8px; font-size: 1.1em; padding: 10px 20px; cursor:pointer; border:none; white-space: nowrap; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        .tab-content { display: none; } .tab-content.active { display: block; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; padding-bottom: 5px; overflow-x: auto; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { background: var(--surface); color: var(--text-muted); border-radius: 10px; font-size: 0.95em; padding: 12px 20px; cursor:pointer; border: 1px solid #e5e7eb; white-space: nowrap; }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; } .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border-bottom: 1px solid #e5e7eb; padding: 12px; text-align: left; }
         th { background-color: #f9fafb; font-weight: 600; color: var(--text-muted); font-size: 0.85em; }
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75em; font-weight: 700; color: white; }
-        .bg-normal { background: #3b82f6; } .bg-medio { background: #f59e0b; } .bg-amanecida { background: #8b5cf6; } .bg-falta { background: var(--danger); } .bg-pendiente { background: #f59e0b; }
+        .bg-normal { background: var(--primary); } .bg-medio { background: var(--warning); } .bg-amanecida { background: #8b5cf6; } .bg-falta { background: var(--danger); }
         
         /* Modales */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000; padding: 20px; }
-        .modal-content { background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000; padding: 15px; backdrop-filter: blur(3px); }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; }
+        
+        /* Cajas de cierre de semana */
+        .cierre-worker-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
         
         #app_screen, #admin_tab { display: none; }
 
-        /* Responsive Celular */
+        /* Responsive Celular estilo App */
         @media (max-width: 768px) {
-            .app-container { padding: 15px; padding-bottom: 90px; }
-            .tabs { position: fixed; bottom: 0; left: 0; width: 100%; background: white; margin: 0; padding: 10px 5px 20px 5px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); justify-content: space-around; z-index: 1000; border-radius: 20px 20px 0 0; }
-            .tab-btn { flex-direction: column; font-size: 0.75em; padding: 8px; border-radius: 12px; width: 24%; }
-            .tab-btn i { font-size: 1.5em; display: block; margin-bottom: 2px; font-style: normal; }
+            .app-container { padding: 10px; padding-bottom: 90px; }
+            .tabs { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); margin: 0; padding: 10px 5px 20px 5px; box-shadow: 0 -5px 20px rgba(0,0,0,0.08); justify-content: space-around; z-index: 1000; border-radius: 20px 20px 0 0; border: none; }
+            .tab-btn { flex-direction: column; font-size: 0.7em; padding: 8px; border-radius: 12px; width: 18%; background: transparent; border: none; font-weight: 600; }
+            .tab-btn.active { background: #eff6ff; color: var(--primary); }
+            .tab-btn i { font-size: 1.6em; display: block; margin-bottom: 4px; font-style: normal; }
+            
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { display: none; }
-            tr { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 15px; padding: 10px; }
-            td { position: relative; padding: 10px 10px 10px 45%; text-align: right; border-bottom: 1px solid #f3f4f6; }
-            td:before { position: absolute; top: 12px; left: 10px; width: 40%; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 0.85em; content: attr(data-label); }
+            tr { background: var(--surface); border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 12px; padding: 12px; }
+            td { position: relative; padding: 8px 8px 8px 45%; text-align: right; border-bottom: 1px dashed #e5e7eb; font-size: 0.95em; }
+            td:last-child { border-bottom: none; }
+            td:before { position: absolute; top: 10px; left: 10px; width: 40%; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 0.85em; content: attr(data-label); }
         }
     </style>
 </head>
 <body>
 
-<!-- PANTALLA DE LOGIN -->
+<!-- LOGIN -->
 <div id="login_screen" class="app-container" style="display: flex; align-items: center; justify-content: center; height: 100vh;">
     <div class="card" style="width: 100%; max-width: 400px; text-align: center;">
-        <h2>☁️ Sistema en la Nube</h2>
-        <p style="color: var(--text-muted); margin-bottom: 20px;">Cuenta de administrador inicial:<br>Usuario: <b>admin</b> | Clave: <b>admin123</b></p>
+        <h2>🔐 Sistema de Pagos</h2>
+        <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9em;">Usuario maestro: <b>admin</b> | Clave: <b>admin123</b></p>
         
         <div class="form-group" style="text-align: left;"><label>Usuario</label><input type="text" id="auth_user"></div>
         <div class="form-group" style="text-align: left;"><label>Contraseña</label><input type="password" id="auth_pass"></div>
         
         <button class="btn-primary" onclick="ingresar()">Iniciar Sesión</button>
-        <button class="btn-outline" style="margin-top: 10px;" onclick="solicitarCuenta()">Solicitar Cuenta Nueva</button>
+        <button class="btn-outline" style="margin-top: 10px;" onclick="solicitarCuenta()">Solicitar Cuenta</button>
     </div>
 </div>
 
 <!-- APP PRINCIPAL -->
 <div id="app_screen" class="app-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin:0;">Hola, <span id="nombre_usuario"></span></h2>
-        <button class="btn-danger btn-small" onclick="cerrarSesion()">Salir</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px;">
+        <h2 style="margin:0; font-size: 1.3em;">Hola, <span id="nombre_usuario" style="color: var(--primary);"></span></h2>
+        <button class="btn-outline btn-small" onclick="cerrarSesion()">Salir</button>
     </div>
     
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('registro')"><i>📝</i><br>Asistencia</button>
+        <button class="tab-btn" onclick="switchTab('prestamos')"><i>💳</i><br>Préstamos</button>
         <button class="tab-btn" onclick="switchTab('perfiles')"><i>👥</i><br>Personal</button>
         <button class="tab-btn" onclick="switchTab('historial')"><i>📊</i><br>Historial</button>
-        <!-- Pestaña exclusiva de admin -->
         <button class="tab-btn" id="admin_tab" onclick="switchTab('admin_panel')"><i>⚙️</i><br>Accesos</button>
     </div>
 
-    <!-- PESTAÑA: REGISTRO -->
+    <!-- PESTAÑA 1: REGISTRO -->
     <div id="registro" class="tab-content active">
         <div class="card">
-            <h3>Registrar Día</h3>
+            <h3 style="margin-bottom: 15px;">Registrar Día</h3>
             <div class="grid">
                 <div class="form-group"><label>Fecha:</label><input type="date" id="fecha_registro"></div>
-                <div class="form-group"><label>Trabajador:</label><select id="select_trabajador"></select></div>
+                <div class="form-group"><label>Trabajador:</label><select id="select_trabajador_reg"></select></div>
                 <div class="form-group"><label>Jornada:</label>
                     <select id="tipo_jornada">
                         <option value="completo">Día Completo</option><option value="medio">Medio Día</option>
@@ -104,22 +114,39 @@
                     </select>
                 </div>
             </div>
-            <button class="btn-success" onclick="registrarDia()">Guardar Asistencia</button>
+            <button class="btn-primary" onclick="registrarDia()">Guardar Asistencia</button>
         </div>
         <div class="card">
-            <h3>Semana Actual</h3>
+            <h3 style="margin-bottom: 15px;">Semana Actual (Pendiente)</h3>
             <table id="tabla_semana_actual">
                 <thead><tr><th>Fecha</th><th>Trabajador</th><th>Jornada</th><th>Monto</th><th>Acción</th></tr></thead>
                 <tbody></tbody>
             </table>
-            <button class="btn-primary" style="margin-top: 20px;" onclick="cerrarSemanaRapido()">🔒 Cerrar Semana y Calcular</button>
+            <button class="btn-success" style="margin-top: 20px;" onclick="iniciarCierreSemana()">🔒 Cerrar Semana y Descontar</button>
         </div>
     </div>
 
-    <!-- PESTAÑA: PERSONAL -->
+    <!-- PESTAÑA 2: PRÉSTAMOS (NUEVO) -->
+    <div id="prestamos" class="tab-content">
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">Otorgar Nuevo Préstamo</h3>
+            <div class="grid">
+                <div class="form-group"><label>Trabajador:</label><select id="select_trabajador_prestamo"></select></div>
+                <div class="form-group"><label>Monto (S/):</label><input type="number" id="monto_prestamo" placeholder="Ej: 100"></div>
+                <div class="form-group"><label>Motivo / Detalle:</label><input type="text" id="motivo_prestamo" placeholder="Ej: Adelanto de quincena"></div>
+            </div>
+            <button class="btn-warning" onclick="registrarPrestamo()">Registrar Préstamo</button>
+        </div>
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">Préstamos Activos (Saldos)</h3>
+            <div id="lista_prestamos_activos"></div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA 3: PERSONAL -->
     <div id="perfiles" class="tab-content">
         <div class="card">
-            <h3>Añadir Trabajador</h3>
+            <h3 style="margin-bottom: 15px;">Añadir Trabajador</h3>
             <div class="grid">
                 <div class="form-group"><label>Nombre:</label><input type="text" id="nuevo_nombre"></div>
                 <div class="form-group"><label>Día (S/):</label><input type="number" id="tarifa_dia" value="0"></div>
@@ -130,7 +157,7 @@
             <button class="btn-primary" onclick="guardarPerfil()">Guardar Perfil</button>
         </div>
         <div class="card">
-            <h3>Equipo</h3>
+            <h3 style="margin-bottom: 15px;">Equipo</h3>
             <table id="tabla_perfiles">
                 <thead><tr><th>Nombre</th><th>Normal</th><th>Medio</th><th>Amanecida</th><th>Domingo</th><th>Acción</th></tr></thead>
                 <tbody></tbody>
@@ -138,20 +165,19 @@
         </div>
     </div>
 
-    <!-- PESTAÑA: HISTORIAL -->
+    <!-- PESTAÑA 4: HISTORIAL -->
     <div id="historial" class="tab-content">
         <div class="card">
-            <button class="btn-excel" onclick="exportarExcel()">📥 Descargar Historial en Excel (.csv)</button>
-            <h3 style="margin-top: 10px;">Estado de Cuentas</h3>
+            <button class="btn-success" style="background: #107c41; margin-bottom: 15px;" onclick="exportarExcel()">📥 Descargar Historial (Excel)</button>
+            <h3 style="margin-bottom: 15px;">Estado de Cuentas (Pagos)</h3>
             <div id="lista_deudas"></div>
         </div>
     </div>
 
-    <!-- PESTAÑA: PANEL ADMIN -->
+    <!-- PESTAÑA 5: PANEL ADMIN -->
     <div id="admin_panel" class="tab-content">
         <div class="card">
-            <h3>Gestión de Usuarios</h3>
-            <p style="font-size: 0.9em; color: gray;">Aquí apruebas a las personas que solicitaron una cuenta para usar la app.</p>
+            <h3>Gestión de Accesos</h3>
             <table id="tabla_usuarios">
                 <thead><tr><th>Usuario</th><th>Estado</th><th>Rol</th><th>Acción</th></tr></thead>
                 <tbody></tbody>
@@ -160,88 +186,86 @@
     </div>
 </div>
 
+<!-- MODAL: CIERRE DE SEMANA CON DESCUENTOS -->
+<div id="modal_cierre" class="modal">
+    <div class="modal-content">
+        <h2 style="color: var(--primary); margin-bottom: 5px;">Cierre de Semana</h2>
+        <p style="color: var(--text-muted); font-size: 0.9em; margin-bottom: 20px;">Revisa los montos generados y aplica los descuentos necesarios (Préstamos u otros).</p>
+        
+        <div id="contenedor_cierre_trabajadores" style="margin-bottom: 20px;">
+            <!-- Se llena con JS -->
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-success" onclick="ejecutarCierre()">Confirmar Pagos</button>
+            <button class="btn-outline" onclick="document.getElementById('modal_cierre').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL: HISTORIAL DETALLADO -->
 <div id="modal_historial" class="modal">
     <div class="modal-content">
         <h3 id="historial_titulo" style="margin-top: 0; color: var(--primary);">Historial</h3>
-        <div id="historial_lista" style="flex: 1; overflow-y: auto; margin-bottom: 20px;">
-            <!-- Se llena con JS -->
-        </div>
+        <div id="historial_lista" style="flex: 1; overflow-y: auto; margin-bottom: 20px; max-height: 50vh;"></div>
         <button class="btn-outline" onclick="document.getElementById('modal_historial').style.display='none'">Cerrar</button>
     </div>
 </div>
 
 <script>
     // =========================================================================
-    // ⚠️ REEMPLAZA ESTO CON EL CÓDIGO QUE TE DIO FIREBASE ⚠️
+    // ⚠️ BORRA ESTO Y PEGA AQUÍ TU firebaseConfig QUE SACASTE DE FIREBASE ⚠️
     // =========================================================================
     const firebaseConfig = {
-      apiKey: "TU_API_KEY",
-      authDomain: "tu-proyecto.firebaseapp.com",
-      databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
-      projectId: "tu-proyecto",
-      storageBucket: "tu-proyecto.appspot.com",
-      messagingSenderId: "123456789",
-      appId: "1:123456789:web:abcdef"
-    };
+  apiKey: "AIzaSyDTbr6OJEe82W8ysTPp-KcU0m2tVIconJw",
+  authDomain: "app-pagos-diego.firebaseapp.com",
+  projectId: "app-pagos-diego",
+  storageBucket: "app-pagos-diego.firebasestorage.app",
+  messagingSenderId: "1089104611876",
+  appId: "1:1089104611876:web:76bd7e37c6c32bfaea66b1",
+  measurementId: "G-MPB3VWTGH9"
+};
     // =========================================================================
 
-    // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    let currentUser = null;
-    let isAdmin = false;
-    let db = { perfiles: {}, semana_actual: [], historico_pagos: {} };
+    let currentUser = null; let isAdmin = false;
+    let db = { perfiles: {}, semana_actual: [], historico_pagos: {}, prestamos: {} };
 
-    // --- SISTEMA DE USUARIOS ---
-    function inicializarAdmin() {
-        database.ref('users/admin').once('value', snap => {
-            if(!snap.exists()) database.ref('users/admin').set({ pass: 'admin123', role: 'admin', status: 'aprobado' });
-        });
-    }
+    // --- USUARIOS ---
+    function inicializarAdmin() { database.ref('users/admin').once('value', snap => { if(!snap.exists()) database.ref('users/admin').set({ pass: 'admin123', role: 'admin', status: 'aprobado' }); }); }
     inicializarAdmin(); 
 
     function ingresar() {
-        const u = document.getElementById('auth_user').value.trim();
-        const p = document.getElementById('auth_pass').value.trim();
+        const u = document.getElementById('auth_user').value.trim(); const p = document.getElementById('auth_pass').value.trim();
         if(!u || !p) return alert("Completa los datos");
-
         database.ref('users/' + u).once('value').then(snap => {
             if(snap.exists()) {
                 const user = snap.val();
                 if(user.pass === p) {
-                    if(user.status === 'pendiente') {
-                        alert("⏳ Tu cuenta está en revisión. Pídele al administrador que te apruebe.");
-                    } else {
+                    if(user.status === 'pendiente') alert("⏳ Cuenta en revisión. Pide al admin que te apruebe.");
+                    else {
                         currentUser = u; isAdmin = (user.role === 'admin');
-                        document.getElementById('login_screen').style.display = 'none';
-                        document.getElementById('app_screen').style.display = 'block';
-                        document.getElementById('nombre_usuario').innerText = u;
-                        document.getElementById('fecha_registro').valueAsDate = new Date();
-                        if(isAdmin) document.getElementById('admin_tab').style.display = 'flex';
+                        document.getElementById('login_screen').style.display = 'none'; document.getElementById('app_screen').style.display = 'block';
+                        document.getElementById('nombre_usuario').innerText = u; document.getElementById('fecha_registro').valueAsDate = new Date();
+                        if(isAdmin) document.getElementById('admin_tab').style.display = 'block';
                         arrancarSincronizacion();
                     }
-                } else { alert("❌ Contraseña incorrecta"); }
-            } else { alert("❌ Usuario no encontrado."); }
+                } else alert("❌ Contraseña incorrecta");
+            } else alert("❌ Usuario no encontrado.");
         });
     }
 
     function solicitarCuenta() {
-        const u = document.getElementById('auth_user').value.trim();
-        const p = document.getElementById('auth_pass').value.trim();
+        const u = document.getElementById('auth_user').value.trim(); const p = document.getElementById('auth_pass').value.trim();
         if(!u || !p) return alert("Escribe un usuario y contraseña");
         database.ref('users/' + u).once('value').then(snap => {
             if(snap.exists()) alert("Este usuario ya existe.");
-            else {
-                database.ref('users/' + u).set({ pass: p, role: 'user', status: 'pendiente' });
-                alert("✅ Solicitud enviada.");
-            }
+            else { database.ref('users/' + u).set({ pass: p, role: 'user', status: 'pendiente' }); alert("✅ Solicitud enviada."); }
         });
     }
-
     function cerrarSesion() { location.reload(); }
-
     function switchTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
@@ -249,186 +273,261 @@
         event.currentTarget.classList.add('active');
     }
 
-    // --- SINCRONIZACIÓN CON LA NUBE ---
+    // --- NUBE ---
     function arrancarSincronizacion() {
         database.ref('db_pagos').on('value', snap => {
             if(snap.exists()) db = snap.val();
-            if(!db.perfiles) db.perfiles = {}; if(!db.semana_actual) db.semana_actual = []; if(!db.historico_pagos) db.historico_pagos = {};
+            if(!db.perfiles) db.perfiles = {}; if(!db.semana_actual) db.semana_actual = []; 
+            if(!db.historico_pagos) db.historico_pagos = {}; if(!db.prestamos) db.prestamos = {};
             actualizarVistas();
         });
-
         if(isAdmin) {
             database.ref('users').on('value', snap => {
-                const usuarios = snap.val(); const tb = document.querySelector('#tabla_usuarios tbody'); tb.innerHTML = '';
-                for(let nombre in usuarios) {
-                    if(nombre === 'admin') continue;
-                    const u = usuarios[nombre];
-                    const btn = u.status === 'pendiente' 
-                        ? `<button class="btn-success btn-small" onclick="aprobarUsuario('${nombre}')">Aprobar</button>`
-                        : `<button class="btn-danger btn-small" onclick="borrarUsuario('${nombre}')">Eliminar</button>`;
-                    const badge = `<span class="badge ${u.status === 'aprobado' ? 'bg-normal' : 'bg-pendiente'}">${u.status}</span>`;
-                    tb.innerHTML += `<tr><td data-label="Usuario"><strong>${nombre}</strong></td><td data-label="Estado">${badge}</td><td data-label="Rol">${u.role}</td><td data-label="Acción">${btn}</td></tr>`;
+                const tb = document.querySelector('#tabla_usuarios tbody'); tb.innerHTML = '';
+                const usuarios = snap.val();
+                for(let n in usuarios) {
+                    if(n === 'admin') continue;
+                    const u = usuarios[n];
+                    const btn = u.status === 'pendiente' ? `<button class="btn-success btn-small" onclick="database.ref('users/${n}').update({status:'aprobado'})">Aprobar</button>` : `<button class="btn-danger btn-small" onclick="if(confirm('¿Eliminar?')) database.ref('users/${n}').remove()">Borrar</button>`;
+                    tb.innerHTML += `<tr><td data-label="Usuario"><strong>${n}</strong></td><td data-label="Estado">${u.status}</td><td data-label="Rol">${u.role}</td><td data-label="Acción">${btn}</td></tr>`;
                 }
             });
         }
     }
-
     function guardarEnNube() { database.ref('db_pagos').set(db); }
 
-    // --- LÓGICA DE LA APP ---
+    // --- PERFILES & REGISTRO ---
     function guardarPerfil() {
         const nombre = document.getElementById('nuevo_nombre').value.trim();
         if(!nombre) return alert("Ingresa nombre");
-        db.perfiles[nombre] = {
-            dia: parseFloat(document.getElementById('tarifa_dia').value)||0, medio: parseFloat(document.getElementById('tarifa_medio').value)||0,
-            amanecida: parseFloat(document.getElementById('tarifa_amanecida').value)||0, domingo: parseFloat(document.getElementById('tarifa_domingo').value)||0
-        };
+        db.perfiles[nombre] = { dia: parseFloat(document.getElementById('tarifa_dia').value)||0, medio: parseFloat(document.getElementById('tarifa_medio').value)||0, amanecida: parseFloat(document.getElementById('tarifa_amanecida').value)||0, domingo: parseFloat(document.getElementById('tarifa_domingo').value)||0 };
         if(!db.historico_pagos[nombre]) db.historico_pagos[nombre] = { deuda: 0, recibos: [] };
-        guardarEnNube(); document.getElementById('nuevo_nombre').value = '';
+        if(!db.prestamos[nombre]) db.prestamos[nombre] = { saldo: 0, historial: [] };
+        guardarEnNube(); document.getElementById('nuevo_nombre').value = ''; alert("Perfil Guardado");
     }
-
     function eliminarPerfil(n) { if(confirm("¿Borrar a "+n+"?")) { delete db.perfiles[n]; guardarEnNube(); } }
 
     function registrarDia() {
-        const fecha = document.getElementById('fecha_registro').value;
-        const nombre = document.getElementById('select_trabajador').value;
-        const jornada = document.getElementById('tipo_jornada').value;
+        const fecha = document.getElementById('fecha_registro').value; const nombre = document.getElementById('select_trabajador_reg').value; const jornada = document.getElementById('tipo_jornada').value;
         if(!nombre || !fecha) return alert("Completa datos");
         const p = db.perfiles[nombre]; let monto = 0;
         if(jornada==='completo') monto = p.dia; else if(jornada==='medio') monto = p.medio; else if(jornada==='amanecida') monto = p.amanecida; else if(jornada==='domingo') monto = p.domingo;
+        if(!db.semana_actual) db.semana_actual = [];
         db.semana_actual.push({ id: Date.now(), fecha, nombre, jornada, monto, registradoPor: currentUser });
-        guardarEnNube(); alert("Guardado en la nube");
+        guardarEnNube();
     }
-
     function borrarRegistro(id) { db.semana_actual = db.semana_actual.filter(r => r.id !== id); guardarEnNube(); }
 
-    function cerrarSemanaRapido() {
-        if(!db.semana_actual || db.semana_actual.length === 0) return alert("No hay registros");
-        if(!confirm("¿Cerrar semana y calcular pagos?")) return;
+    // --- PRÉSTAMOS ---
+    function registrarPrestamo() {
+        const nombre = document.getElementById('select_trabajador_prestamo').value;
+        const monto = parseFloat(document.getElementById('monto_prestamo').value);
+        const motivo = document.getElementById('motivo_prestamo').value || "Adelanto";
+        if(!nombre || !monto || monto <= 0) return alert("Ingresa un trabajador y monto válido");
+
+        if(!db.prestamos[nombre]) db.prestamos[nombre] = { saldo: 0, historial: [] };
+        if(!db.prestamos[nombre].historial) db.prestamos[nombre].historial = [];
         
-        let trabajadores = [...new Set(db.semana_actual.map(r => r.nombre))];
+        db.prestamos[nombre].saldo += monto;
+        db.prestamos[nombre].historial.push({ fecha: new Date().toLocaleDateString(), monto: monto, tipo: "otorgado", detalle: motivo });
         
-        trabajadores.forEach(n => {
-            let registrosTrabajador = db.semana_actual.filter(r => r.nombre === n);
-            let totalMonto = registrosTrabajador.reduce((sum, r) => sum + r.monto, 0);
+        guardarEnNube(); 
+        document.getElementById('monto_prestamo').value = ''; document.getElementById('motivo_prestamo').value = '';
+        alert("Préstamo registrado exitosamente.");
+    }
+
+    // --- CIERRE DE SEMANA AVANZADO (CON DESCUENTOS) ---
+    let trabajadoresCierre = [];
+    let generadosCierre = {};
+
+    function iniciarCierreSemana() {
+        if(!db.semana_actual || db.semana_actual.length === 0) return alert("No hay registros esta semana.");
+        
+        trabajadoresCierre = [...new Set(db.semana_actual.map(r => r.nombre))];
+        generadosCierre = {};
+        
+        const cont = document.getElementById('contenedor_cierre_trabajadores');
+        cont.innerHTML = '';
+
+        trabajadoresCierre.forEach(n => {
+            let registros = db.semana_actual.filter(r => r.nombre === n);
+            generadosCierre[n] = registros.reduce((sum, r) => sum + r.monto, 0);
+            let saldoPrestamo = (db.prestamos[n] && db.prestamos[n].saldo) ? db.prestamos[n].saldo : 0;
             
-            // Recopilar detalle exacto de qué días trabajó
-            let detalleDias = registrosTrabajador.map(r => `${r.fecha} (${r.jornada})`).join(" | ");
+            let html = `
+                <div class="cierre-worker-box">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                        <strong style="font-size: 1.1em;">👤 ${n}</strong>
+                        <strong style="color: var(--primary);">Generó: S/ ${generadosCierre[n]}</strong>
+                    </div>
+            `;
+            
+            if (saldoPrestamo > 0) {
+                html += `
+                    <div class="form-group" style="background: #fffbeb; padding: 10px; border-radius: 8px; border: 1px solid #fde68a;">
+                        <label style="color: #b45309;">⚠️ Tiene deuda de Préstamo: S/ ${saldoPrestamo}</label>
+                        <input type="number" id="desc_prestamo_${n}" placeholder="¿Cuánto descontar de la deuda?" min="0" max="${saldoPrestamo}" value="0">
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <div class="form-group">
+                        <label>Otro Descuento (Faltas extras, etc):</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="number" id="desc_otro_${n}" placeholder="Monto (S/)" value="0" style="flex:1;">
+                            <input type="text" id="motivo_otro_${n}" placeholder="Motivo" style="flex:2;">
+                        </div>
+                    </div>
+                </div>
+            `;
+            cont.innerHTML += html;
+        });
+
+        document.getElementById('modal_cierre').style.display = 'flex';
+    }
+
+    function ejecutarCierre() {
+        trabajadoresCierre.forEach(n => {
+            let total = generadosCierre[n];
+            let registros = db.semana_actual.filter(r => r.nombre === n);
+            let detalleDias = registros.map(r => `${r.fecha}(${r.jornada})`).join(", ");
+            
+            let saldoPrestamo = (db.prestamos[n] && db.prestamos[n].saldo) ? db.prestamos[n].saldo : 0;
+            
+            // Obtener valores de los inputs
+            let inputPrestamo = document.getElementById(`desc_prestamo_${n}`);
+            let descPrestamo = inputPrestamo ? (parseFloat(inputPrestamo.value) || 0) : 0;
+            let descOtro = parseFloat(document.getElementById(`desc_otro_${n}`).value) || 0;
+            let motivoOtro = document.getElementById(`motivo_otro_${n}`).value || "Descuento aplicado";
+
+            // Validar que no descuente más del préstamo
+            if (descPrestamo > saldoPrestamo) descPrestamo = saldoPrestamo;
+
+            let pagoFinal = total - descPrestamo - descOtro;
+            
+            let detalleFinal = `Semana: ${detalleDias}. Generó: S/${total}.`;
+            
+            // Si hay descuento de préstamo, actualizar préstamo
+            if (descPrestamo > 0) {
+                db.prestamos[n].saldo -= descPrestamo;
+                db.prestamos[n].historial.push({ fecha: new Date().toLocaleDateString(), monto: descPrestamo, tipo: "amortizacion", detalle: "Descuento en cierre de semana" });
+                detalleFinal += ` | -S/${descPrestamo} (Cobro de préstamo)`;
+            }
+            
+            if (descOtro > 0) detalleFinal += ` | -S/${descOtro} (${motivoOtro})`;
 
             if(!db.historico_pagos[n]) db.historico_pagos[n] = { deuda: 0, recibos: [] };
             if(!db.historico_pagos[n].recibos) db.historico_pagos[n].recibos = [];
 
-            db.historico_pagos[n].deuda += totalMonto;
-            db.historico_pagos[n].recibos.push({
-                fecha: new Date().toLocaleDateString(),
-                monto: totalMonto,
-                detalle: `DÍAS TRABAJADOS: ${detalleDias}`
-            });
+            db.historico_pagos[n].deuda += pagoFinal;
+            db.historico_pagos[n].recibos.push({ fecha: new Date().toLocaleDateString(), monto: pagoFinal, detalle: detalleFinal });
         });
 
-        db.semana_actual = []; guardarEnNube(); alert("Semana cerrada"); switchTab('historial');
+        db.semana_actual = []; guardarEnNube(); 
+        document.getElementById('modal_cierre').style.display = 'none';
+        alert("✅ Semana cerrada y descuentos aplicados.");
+        switchTab('historial');
     }
 
     function liquidarPago(n) {
-        if(confirm(`¿Pagaste a ${n}? Su deuda quedará en 0.`)) {
+        if(confirm(`¿Registrar pago a ${n}?`)) {
             db.historico_pagos[n].deuda = 0;
-            db.historico_pagos[n].recibos.push({ fecha: new Date().toLocaleDateString(), monto: 0, detalle: "✅ SE REALIZÓ EL PAGO" });
+            db.historico_pagos[n].recibos.push({ fecha: new Date().toLocaleDateString(), monto: 0, detalle: "✅ SE ENTREGÓ EL DINERO AL TRABAJADOR" });
             guardarEnNube();
         }
     }
 
-    // --- NUEVO: VER HISTORIAL DETALLADO ---
-    function verHistorialDetallado(nombre) {
-        const h = db.historico_pagos[nombre];
-        const modal = document.getElementById('modal_historial');
-        const lista = document.getElementById('historial_lista');
-        
-        document.getElementById('historial_titulo').innerText = "Historial de " + nombre;
+    function verHistorialDetallado(nombre, tipo) {
+        const modal = document.getElementById('modal_historial'); const lista = document.getElementById('historial_lista');
+        document.getElementById('historial_titulo').innerText = `Historial de ${tipo === 'pagos' ? 'Pagos' : 'Préstamos'} - ${nombre}`;
         lista.innerHTML = '';
 
-        if (h && h.recibos && h.recibos.length > 0) {
-            // Clonamos y volteamos para ver el más reciente primero
-            [...h.recibos].reverse().forEach(r => {
-                const esPago = r.detalle.includes("PAGO");
+        let arrayHistorial = [];
+        if (tipo === 'pagos' && db.historico_pagos[nombre] && db.historico_pagos[nombre].recibos) arrayHistorial = db.historico_pagos[nombre].recibos;
+        if (tipo === 'prestamos' && db.prestamos[nombre] && db.prestamos[nombre].historial) arrayHistorial = db.prestamos[nombre].historial;
+
+        if (arrayHistorial.length > 0) {
+            [...arrayHistorial].reverse().forEach(r => {
+                let colorBase = (tipo === 'pagos') ? (r.detalle.includes("ENTREGÓ") ? '#ecfdf5' : '#f9fafb') : (r.tipo === 'otorgado' ? '#fef2f2' : '#ecfdf5');
+                let colorMonto = (tipo === 'pagos') ? (r.detalle.includes("ENTREGÓ") ? 'var(--success)' : 'var(--text-main)') : (r.tipo === 'otorgado' ? 'var(--danger)' : 'var(--success)');
+                let signo = (tipo === 'prestamos' && r.tipo === 'otorgado') ? '+' : (tipo === 'prestamos' ? '-' : '');
+                
                 lista.innerHTML += `
-                    <div style="padding: 12px; border-bottom: 1px solid #e5e7eb; background: ${esPago ? '#ecfdf5' : 'white'}; border-radius: 8px; margin-bottom: 8px;">
+                    <div style="padding: 12px; border-bottom: 1px solid #e5e7eb; background: ${colorBase}; border-radius: 8px; margin-bottom: 8px;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <strong style="color: #374151;">📅 ${r.fecha}</strong>
-                            <b style="color:${esPago ? 'var(--success)' : 'var(--danger)'}; font-size: 1.1em;">S/ ${r.monto.toFixed(2)}</b>
+                            <strong style="color: #374151; font-size: 0.9em;">📅 ${r.fecha}</strong>
+                            <b style="color:${colorMonto};"> ${signo}S/ ${r.monto.toFixed(2)}</b>
                         </div>
                         <div style="font-size:0.85em; color: var(--text-muted); line-height: 1.4;">${r.detalle}</div>
-                    </div>
-                `;
+                    </div>`;
             });
-        } else {
-            lista.innerHTML = '<p style="color: gray; text-align: center;">No hay historial todavía.</p>';
-        }
-        
+        } else lista.innerHTML = '<p style="color: gray; text-align: center;">No hay registros.</p>';
         modal.style.display = 'flex';
     }
 
-    // --- NUEVO: EXPORTAR A EXCEL (.CSV) ---
     function exportarExcel() {
-        // Cabeceras del Excel
-        let csv = "Trabajador;Fecha;Tipo de Movimiento;Monto (S/);Detalle de Dias Trabajados\n";
-
+        let csv = "Trabajador;Fecha;Tipo;Monto (S/);Detalle\n";
         for(let nombre in db.historico_pagos) {
-            let h = db.historico_pagos[nombre];
-            if(h.recibos) {
-                h.recibos.forEach(r => {
-                    let tipo = r.detalle.includes("PAGO") ? "Pago Entregado" : "Cierre de Semana";
-                    // Limpiar textos para que no rompan el Excel
-                    let detalleLimpio = r.detalle.replace(/;/g, ",").replace(/\n/g, " ");
-                    csv += `${nombre};${r.fecha};${tipo};${r.monto};${detalleLimpio}\n`;
+            if(db.historico_pagos[nombre].recibos) {
+                db.historico_pagos[nombre].recibos.forEach(r => {
+                    csv += `${nombre};${r.fecha};Pago Semanal;${r.monto};${r.detalle.replace(/;/g, ",").replace(/\n/g, " ")}\n`;
                 });
             }
         }
-
-        // Crear el archivo descargable
-        let blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }); // \ufeff pone tildes y ñ correctamente
-        let link = document.createElement("a");
-        let url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", "Historial_Pagos_Personal.csv");
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        for(let nombre in db.prestamos) {
+            if(db.prestamos[nombre].historial) {
+                db.prestamos[nombre].historial.forEach(r => {
+                    csv += `${nombre};${r.fecha};Prestamo (${r.tipo});${r.monto};${r.detalle.replace(/;/g, ",").replace(/\n/g, " ")}\n`;
+                });
+            }
+        }
+        let blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+        let link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "Historial_Sistema.csv"; link.click();
     }
 
-    // Funciones Admin
-    function aprobarUsuario(u) { database.ref('users/'+u).update({ status: 'aprobado' }); }
-    function borrarUsuario(u) { if(confirm("¿Eliminar usuario?")) database.ref('users/'+u).remove(); }
-
-    // Render
+    // Renderizado UI
     function actualizarVistas() {
-        const sel = document.getElementById('select_trabajador'); sel.innerHTML = '<option value="">Elegir...</option>';
+        let options = '<option value="">Elegir...</option>';
+        for(let n in db.perfiles) options += `<option value="${n}">${n}</option>`;
+        document.getElementById('select_trabajador_reg').innerHTML = options;
+        document.getElementById('select_trabajador_prestamo').innerHTML = options;
+
         const tbP = document.querySelector('#tabla_perfiles tbody'); tbP.innerHTML = '';
-        for(let n in db.perfiles) {
-            sel.innerHTML += `<option value="${n}">${n}</option>`;
-            tbP.innerHTML += `<tr><td data-label="Nombre"><strong>${n}</strong></td><td data-label="Día">S/${db.perfiles[n].dia}</td><td data-label="Medio">S/${db.perfiles[n].medio}</td><td data-label="Amanecida">S/${db.perfiles[n].amanecida}</td><td data-label="Domingo">S/${db.perfiles[n].domingo}</td><td data-label="Acción"><button class="btn-danger btn-small" onclick="eliminarPerfil('${n}')">Borrar</button></td></tr>`;
-        }
+        for(let n in db.perfiles) tbP.innerHTML += `<tr><td data-label="Nombre"><strong>${n}</strong></td><td data-label="Día">S/${db.perfiles[n].dia}</td><td data-label="Medio">S/${db.perfiles[n].medio}</td><td data-label="Amanecida">S/${db.perfiles[n].amanecida}</td><td data-label="Domingo">S/${db.perfiles[n].domingo}</td><td data-label="Acción"><button class="btn-danger btn-small" onclick="eliminarPerfil('${n}')">Borrar</button></td></tr>`;
+
         const tbS = document.querySelector('#tabla_semana_actual tbody'); tbS.innerHTML = '';
-        if(db.semana_actual) db.semana_actual.forEach(r => {
-            const b = `<span class="badge ${r.jornada === 'falta' ? 'bg-falta' : 'bg-normal'}">${r.jornada.toUpperCase()}</span>`;
-            tbS.innerHTML += `<tr><td data-label="Fecha">${r.fecha}</td><td data-label="Trabajador">${r.nombre}</td><td data-label="Jornada">${b}</td><td data-label="Monto"><strong>S/${r.monto}</strong></td><td data-label="Acción"><button class="btn-danger btn-small" onclick="borrarRegistro(${r.id})">Quitar</button></td></tr>`;
-        });
+        if(db.semana_actual) db.semana_actual.forEach(r => { tbS.innerHTML += `<tr><td data-label="Fecha">${r.fecha}</td><td data-label="Trabajador"><strong>${r.nombre}</strong></td><td data-label="Jornada"><span class="badge ${r.jornada === 'falta' ? 'bg-falta' : 'bg-normal'}">${r.jornada.toUpperCase()}</span></td><td data-label="Monto">S/${r.monto}</td><td data-label="Acción"><button class="btn-outline btn-small" style="color:var(--danger);" onclick="borrarRegistro(${r.id})">Quitar</button></td></tr>`; });
+
         const divD = document.getElementById('lista_deudas'); divD.innerHTML = '';
         for(let n in db.historico_pagos) {
             const h = db.historico_pagos[n];
             divD.innerHTML += `
-                <div style="background: white; padding: 15px; border-radius: 12px; border: 1px solid #e5e7eb; margin-bottom: 15px;">
+                <div class="card" style="margin-bottom: 12px; padding: 15px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin:0;">${n}</h3>
-                        <div style="text-align: right;">
-                            <strong style="color: ${h.deuda > 0 ? 'var(--danger)' : 'var(--success)'}; font-size: 1.2em; display: block;">S/ ${h.deuda.toFixed(2)}</strong>
-                        </div>
+                        <h3 style="margin:0; font-size: 1.1em;">${n}</h3>
+                        <strong style="color: ${h.deuda > 0 ? 'var(--danger)' : 'var(--success)'}; font-size: 1.2em;">S/ ${h.deuda.toFixed(2)}</strong>
                     </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn-outline btn-small" style="flex: 1;" onclick="verHistorialDetallado('${n}')">👀 Ver Detalles</button>
-                        ${h.deuda > 0 ? `<button class="btn-success btn-small" style="flex: 1;" onclick="liquidarPago('${n}')">Pagar Deuda</button>` : ''}
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-outline btn-small" style="flex:1;" onclick="verHistorialDetallado('${n}', 'pagos')">Historial Pagos</button>
+                        ${h.deuda > 0 ? `<button class="btn-success btn-small" style="flex:1;" onclick="liquidarPago('${n}')">Pagar Deuda</button>` : ''}
                     </div>
                 </div>`;
+        }
+
+        const divPrestamos = document.getElementById('lista_prestamos_activos'); divPrestamos.innerHTML = '';
+        for(let n in db.prestamos) {
+            const p = db.prestamos[n];
+            if (p.saldo > 0 || p.historial.length > 0) {
+                divPrestamos.innerHTML += `
+                    <div class="card" style="margin-bottom: 12px; padding: 15px; border-left: 4px solid var(--warning);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong style="font-size: 1.1em;">${n}</strong>
+                            <span style="color: ${p.saldo > 0 ? '#b45309' : 'var(--success)'}; font-weight: bold; background: ${p.saldo > 0 ? '#fef3c7' : '#d1fae5'}; padding: 4px 8px; border-radius: 8px;">Deuda: S/ ${p.saldo.toFixed(2)}</span>
+                        </div>
+                        <button class="btn-outline btn-small" style="width: 100%;" onclick="verHistorialDetallado('${n}', 'prestamos')">Ver Movimientos de Préstamo</button>
+                    </div>`;
+            }
         }
     }
 </script>
